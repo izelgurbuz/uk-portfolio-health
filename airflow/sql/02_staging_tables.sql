@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS PORTFOLIO.RAW.EQUITY_DAILY (
+  symbol STRING NOT NULL,
+  date DATE NOT NULL,
+  open NUMBER(18,6),
+  high NUMBER(18,6),
+  low  NUMBER(18,6),
+  close NUMBER(18,6),
+  volume NUMBER(38,0),
+  source STRING,
+  _ingested_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+  CONSTRAINT pk_equity_daily PRIMARY KEY (symbol, date)
+);
+
+CREATE TABLE IF NOT EXISTS PORTFOLIO.RAW.FX_DAILY (
+  pair STRING NOT NULL,   -- e.g., USD/EUR, GBP/EUR
+  date DATE NOT NULL,
+  rate NUMBER(18,8),
+  source STRING,
+  _ingested_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP(),
+  CONSTRAINT pk_fx_daily PRIMARY KEY (pair, date)
+);

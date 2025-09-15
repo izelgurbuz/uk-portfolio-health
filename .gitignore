@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Env files
+.env
+.venv/
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+
+# Data files
+data/raw/
+data/processed/
+
+# IDE
+.vscode/
+.idea/
