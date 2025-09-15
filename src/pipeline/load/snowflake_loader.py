@@ -27,6 +27,33 @@ def exec_sql(sql: str):
         conn.execute(text(sql))
 
 
+def get_last_loaded_date(source: str) -> str | None:
+    """
+    Get last_loaded_date for a source from RAW.LOAD_METADATA.
+    Returns a date string 'YYYY-MM-DD' or None if not set.
+    """
+    sql = text("SELECT last_loaded_date FROM RAW.LOAD_METADATA WHERE source = :src")
+    with engine().connect() as conn:
+        row = conn.execute(sql, {"src": source}).fetchone()
+        return str(row[0]) if row and row[0] else None
+
+
+def update_last_loaded_date(source: str, date_str: str):
+    """
+    Upsert last_loaded_date for a given source.
+    """
+    sql = text("""
+        MERGE INTO RAW.LOAD_METADATA t
+        USING (SELECT :src AS source, :dt AS last_loaded_date) s
+        ON t.source = s.source
+        WHEN MATCHED THEN UPDATE SET last_loaded_date = s.last_loaded_date, _updated_at = CURRENT_TIMESTAMP()
+        WHEN NOT MATCHED THEN INSERT (source, last_loaded_date) VALUES (s.source, s.last_loaded_date)
+    """)
+    with engine().connect() as conn:
+        conn.execute(sql, {"src": source, "dt": date_str})
+        conn.commit()
+
+
 def sf_conn():
     return snowflake.connector.connect(
         user=os.getenv("SNOWFLAKE_USER"),
