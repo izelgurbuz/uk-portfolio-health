@@ -40,12 +40,6 @@ def fetch_symbol_daily(sym: str, start_date: str) -> pd.DataFrame:
     for c in num_cols:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    if "volume" in df.columns:
-        df["volume"] = pd.to_numeric(df["volume"], errors="coerce")  # float64 w/ NaN
-        df["volume"] = df["volume"].fillna(0).round().astype("Int64")  # safe cast
-    else:
-        df["volume"] = pd.Series([0] * len(df), dtype="Int64")
-
     df["symbol"] = sym.upper()
     df["source"] = "stooq"
 

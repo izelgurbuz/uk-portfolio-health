@@ -1,8 +1,11 @@
 import os
 
 import pandas as pd
+import snowflake.connector
 from snowflake.connector.pandas_tools import write_pandas
 from sqlalchemy import create_engine, text
+
+from ..utils.logging import log
 
 
 def engine():
@@ -24,11 +27,37 @@ def exec_sql(sql: str):
         conn.execute(text(sql))
 
 
-def write_df(df: pd.DataFrame, table: str, schema: str):
-    eng = engine()
-    with eng.connect() as conn:
-        conn = conn.connection  # unwrap to raw Snowflake connection
+def sf_conn():
+    return snowflake.connector.connect(
+        user=os.getenv("SNOWFLAKE_USER"),
+        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        account=os.getenv("SNOWFLAKE_ACCOUNT"),
+        warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH"),
+        database=os.getenv("SNOWFLAKE_DATABASE", "PORTFOLIO"),
+        schema=os.getenv("SNOWFLAKE_SCHEMA_RAW", "RAW"),
+        role=os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN"),
+    )
+
+
+def write_df(df: pd.DataFrame, table: str, schema: str = "RAW") -> int:
+    """
+    Load a Pandas DataFrame into a Snowflake table.
+
+    Args:
+        df: DataFrame with columns matching the target table
+        table: Table name (string, no schema prefix)
+        schema: Target schema (default = RAW)
+
+    Returns:
+        Number of rows inserted
+    """
+    with sf_conn() as conn:
         success, nchunks, nrows, _ = write_pandas(
-            conn, df, table_name=table, schema=schema, overwrite=False
+            conn,
+            df,
+            table_name=table,
+            schema=schema,
+            quote_identifiers=False,  # use uppercase cols without quotes
         )
-        print(f"Loaded {nrows} rows into {schema}.{table}")
+        log(f"[LOAD] {nrows} rows into {schema}.{table} (success={success})")
+        return nrows
