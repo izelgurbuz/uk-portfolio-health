@@ -3,6 +3,8 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 
+from pipeline.load.local import write_partitioned
+
 from ..extract.ecb_fx import fetch_fx_all
 from ..extract.stooq import fetch_equities
 from ..load.snowflake_loader import (
@@ -31,6 +33,7 @@ def run_incremental():
     if len(eq_df) == 0:
         log("No new equities to load.")
     else:
+        write_partitioned(eq_df, "equity_daily", ["symbol", "date"])
         write_df(eq_df, table="EQUITY_DAILY", schema="RAW")
         max_date = eq_df["DATE"].max().strftime("%Y-%m-%d")
         update_last_loaded_date("equities", max_date)
@@ -47,6 +50,7 @@ def run_incremental():
     if len(fx_df) == 0:
         log("No new FX data to load.")
     else:
+        write_partitioned(fx_df, "fx_daily", ["pair", "date"])
         write_df(fx_df, table="FX_DAILY", schema="RAW")
         max_date_fx = fx_df["DATE"].max().strftime("%Y-%m-%d")
         update_last_loaded_date("fx", max_date_fx)
