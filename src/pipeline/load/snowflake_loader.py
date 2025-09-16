@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import pandas as pd
 import snowflake.connector
@@ -27,7 +28,7 @@ def exec_sql(sql: str):
         conn.execute(text(sql))
 
 
-def get_last_loaded_date(source: str) -> str | None:
+def get_last_loaded_date(source: str) -> Optional[str]:
     """
     Get last_loaded_date for a source from RAW.LOAD_METADATA.
     Returns a date string 'YYYY-MM-DD' or None if not set.
@@ -51,7 +52,6 @@ def update_last_loaded_date(source: str, date_str: str):
     """)
     with engine().connect() as conn:
         conn.execute(sql, {"src": source, "dt": date_str})
-        conn.commit()
 
 
 def sf_conn():

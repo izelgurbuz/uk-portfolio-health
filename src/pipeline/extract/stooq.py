@@ -1,6 +1,5 @@
 import io
 import time
-from typing import List
 
 import pandas as pd
 import requests
@@ -48,9 +47,9 @@ def fetch_symbol_daily(sym: str, start_date: str) -> pd.DataFrame:
     return df[["symbol", "date", "open", "high", "low", "close", "volume", "source"]]
 
 
-def fetch_equities(symbols: List[str], start_date: str) -> pd.DataFrame:
+def fetch_equities(symbols, start_date, last_loaded=None):
     parts = [fetch_symbol_daily(s, start_date) for s in symbols]
-    df = pd.concat(parts, ignore_index=True)
-    # de-dupe just in case
-    df = df.drop_duplicates(subset=["symbol", "date"]).reset_index(drop=True)
+    df = pd.concat(parts, ignore_index=True).drop_duplicates(subset=["symbol", "date"])
+    if last_loaded:
+        df = df[df["date"] > pd.to_datetime(last_loaded).date()]
     return df
