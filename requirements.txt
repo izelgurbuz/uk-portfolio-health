@@ -4,10 +4,12 @@ requests>=2.32
 python-dotenv>=1.0
 snowflake-connector-python>=3.9
 snowflake-sqlalchemy>=1.6
-SQLAlchemy>=2.0
+SQLAlchemy>=1.4,<2.0
 numpy>=1.26
 tqdm>=4.66
 rich>=13.7
 pytest>=8.0
 ruff>=0.5
 apache-airflow==2.9.3
+apache-airflow-providers-snowflake
+apache-airflow-providers-http
