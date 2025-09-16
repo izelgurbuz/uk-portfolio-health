@@ -30,9 +30,11 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-db/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      PYTHONPATH: /opt/airflow
     ports: ["8080:8080"]
     volumes:
       [
+        "./src:/opt/airflow/src",
         "./airflow/dags:/opt/airflow/dags",
         "./airflow/plugins:/opt/airflow/plugins",
         "./airflow/logs:/opt/airflow/logs",
@@ -49,8 +51,10 @@ services:
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-db/airflow
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      PYTHONPATH: /opt/airflow
     volumes:
       [
+        "./src:/opt/airflow/src",
         "./airflow/dags:/opt/airflow/dags",
         "./airflow/plugins:/opt/airflow/plugins",
         "./airflow/logs:/opt/airflow/logs",
@@ -67,8 +71,10 @@ services:
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-db/airflow
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      PYTHONPATH: /opt/airflow
     volumes:
       [
+        "./src:/opt/airflow/src",
         "./airflow/dags:/opt/airflow/dags",
         "./airflow/plugins:/opt/airflow/plugins",
         "./airflow/logs:/opt/airflow/logs",

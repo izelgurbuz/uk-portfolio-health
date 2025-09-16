@@ -5,9 +5,9 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
 
 from airflow import DAG
-from pipeline.jobs.data_quality import dq_check
-from pipeline.jobs.incremental_load import main as run_incremental_main
-from pipeline.jobs.load_to_snowflake import apply_ddl as sf_apply_ddl
+from src.pipeline.jobs.data_quality import dq_check
+from src.pipeline.jobs.incremental_load import main as run_incremental_main
+from src.pipeline.jobs.load_to_snowflake import apply_ddl as sf_apply_ddl
 
 default_args = {"owner": "izel", "retries": 2, "retry_delay": timedelta(minutes=5)}
 
