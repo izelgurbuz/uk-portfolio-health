@@ -4,8 +4,7 @@ from typing import List
 
 from dotenv import load_dotenv
 
-from ..extract.ecb_fx import fetch_fx_all
-from ..extract.stooq import fetch_equities
+from ..extract.stooq import fetch_equities, fetch_fx_pair
 from ..load.local import write_parquet
 from ..transform.cleaning import clean_equities, clean_fx
 from ..utils.dq import dq_report
@@ -26,15 +25,15 @@ def main():
     eqc = clean_equities(eq)
     eq_p = write_parquet(eqc, "equity_daily")
 
-    log("fetching fx from ECB")
-    fx = fetch_fx_all()
+    log("fetching fx from Stooq")
+    fx = fetch_fx_pair()
     fxc = clean_fx(fx)
     fx_p = write_parquet(fxc, "fx_daily")
 
     log(
-        f"[DQ] equities: {json.dumps(dq_report(eqc, pk_cols=['SYMBOL', 'DATE']), indent=2)}"
+        f"DQ equities: {json.dumps(dq_report(eqc, pk_cols=['SYMBOL', 'DATE']), indent=2)}"
     )
-    log(f"[DQ] fx: {json.dumps(dq_report(fxc, pk_cols=['PAIR', 'DATE']), indent=2)}")
+    log(f"DQ fx: {json.dumps(dq_report(fxc, pk_cols=['PAIR', 'DATE']), indent=2)}")
     log(f"Parquet written: {eq_p} and {fx_p}")
 
 
