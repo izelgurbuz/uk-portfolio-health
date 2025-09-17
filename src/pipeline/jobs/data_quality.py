@@ -8,9 +8,9 @@ def dq_check():
     with engine().connect() as conn:
         fx_missing = conn.execute(
             text("""
-            SELECT COUNT(*) FROM RAW.EQUITY_DAILY e
-            LEFT JOIN RAW.FX_DAILY fx
-                ON e.DATE = fx.DATE AND fx.pair = 'USD/GBP'
+            SELECT COUNT(*) FROM PORTFOLIO.RAW.EQUITY_DAILY e
+            LEFT JOIN PORTFOLIO.RAW.FX_DAILY fx
+                ON e.DATE = fx.DATE AND fx.pair = 'USDGBP'
             WHERE fx.RATE IS NULL                  
         """)
         ).scalar()
@@ -20,7 +20,7 @@ def dq_check():
 
         neg_prices = conn.execute(
             text("""
-            SELECT COUNT(*) FROM RAW.EQUITY_DAILY WHERE close <= 0
+            SELECT COUNT(*) FROM PORTFOLIO.RAW.EQUITY_DAILY WHERE close <= 0
         """)
         ).scalar()
 
