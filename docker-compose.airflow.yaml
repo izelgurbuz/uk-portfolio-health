@@ -74,6 +74,8 @@ services:
       PYTHONPATH: /opt/airflow
     volumes:
       [
+        "./data:/opt/airflow/data",
+        "./.env:/opt/airflow/.env",
         "./src:/opt/airflow/src",
         "./airflow/dags:/opt/airflow/dags",
         "./airflow/plugins:/opt/airflow/plugins",

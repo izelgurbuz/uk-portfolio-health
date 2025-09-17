@@ -3,10 +3,13 @@ from typing import Optional
 
 import pandas as pd
 import snowflake.connector
+from dotenv import load_dotenv
 from snowflake.connector.pandas_tools import write_pandas
 from sqlalchemy import create_engine, text
 
 from ..utils.logging import log
+
+load_dotenv("/opt/airflow/.env")
 
 
 def engine():
