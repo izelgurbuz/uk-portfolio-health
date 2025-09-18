@@ -8,6 +8,7 @@ from airflow import DAG
 from src.pipeline.jobs.data_quality import dq_check
 from src.pipeline.jobs.export_snapshots import export_portfolio_metrics
 from src.pipeline.jobs.incremental_load import main as run_incremental_main
+from src.pipeline.jobs.profile_queries import profile_snowflake_queries
 from src.pipeline.utils.alerts import send_slack_alert
 
 
@@ -67,7 +68,7 @@ with DAG(
     )
     t_build_fact_prices = SnowflakeOperator(
         task_id="build_fact_prices",
-        sql="03_analytics_views.sql",
+        sql="03_analytics_table.sql",
         snowflake_conn_id="snowflake_default",
     )
     t_build_portfolio_metrics = SnowflakeOperator(
@@ -80,6 +81,10 @@ with DAG(
         task_id="export_snapshot",
         python_callable=export_portfolio_metrics,
     )
+    t_profile_queries = PythonOperator(
+        task_id="profile_queries",
+        python_callable=profile_snowflake_queries,
+    )
 
     chain(
         t_apply_roles,
@@ -90,4 +95,5 @@ with DAG(
         t_build_fact_prices,
         t_build_portfolio_metrics,
         t_export_snapshot,
+        t_profile_queries,
     )
