@@ -8,8 +8,25 @@ from airflow import DAG
 from src.pipeline.jobs.data_quality import dq_check
 from src.pipeline.jobs.export_snapshots import export_portfolio_metrics
 from src.pipeline.jobs.incremental_load import main as run_incremental_main
+from src.pipeline.utils.alerts import send_slack_alert
 
-default_args = {"owner": "izel", "retries": 2, "retry_delay": timedelta(minutes=5)}
+
+def airflow_failure_callback(context):
+    """
+    Called when any task fails in Airflow.
+    """
+    task_id = context["task_instance"].task_id
+    dag_id = context["dag"].dag_id
+    msg = f"Task `{task_id}` in DAG `{dag_id}` failed!"
+    send_slack_alert(msg)
+
+
+default_args = {
+    "owner": "izel",
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": airflow_failure_callback,
+}
 
 with DAG(
     dag_id="etl_uk_portfolio_health",
