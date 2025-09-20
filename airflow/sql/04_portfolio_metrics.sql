@@ -9,8 +9,9 @@ WITH holdings AS (
         pos.QUANTITY,
         (fp.CLOSE_GBP * pos.QUANTITY) AS position_value_gbp
     FROM PORTFOLIO.ANALYTICS.FACT_PRICES fp
-    JOIN PORTFOLIO.RAW.PORTFOLIO_POSITIONS pos
+    JOIN PORTFOLIO.ANALYTICS.PORTFOLIO_POSITIONS_DAILY pos
       ON fp.SYMBOL = pos.SYMBOL
+      AND fp.DATE   = pos.DATE
 ),
 
 --  daily portfolio returns

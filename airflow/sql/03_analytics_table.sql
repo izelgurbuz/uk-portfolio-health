@@ -31,17 +31,17 @@ USING (
             PARTITION BY e.SYMBOL ORDER BY e.DATE 
             ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
         ) AS ROLLING_30D_VOLATILITY
-    FROM RAW.EQUITY_DAILY e
-    JOIN RAW.FX_DAILY fx 
+    FROM PORTFOLIO.RAW.EQUITY_DAILY e
+    JOIN PORTFOLIO.RAW.FX_DAILY fx 
       ON fx.DATE = e.DATE 
      AND fx.PAIR = 'USDGBP'
     LEFT JOIN PORTFOLIO.ANALYTICS.DIM_SYMBOL s 
       ON e.SYMBOL = s.SYMBOL
-    WHERE e.DATE > (
-        SELECT COALESCE(last_loaded_date, '2018-01-01')
-        FROM RAW.LOAD_METADATA
-        WHERE source = 'fact_prices'
-    )
+    WHERE e.DATE > COALESCE((
+        SELECT last_loaded_date
+        FROM PORTFOLIO.RAW.LOAD_METADATA
+        WHERE source = 'fact_prices')
+    , '2025-01-01'::DATE)
 ) AS source
 ON target.SYMBOL = source.SYMBOL 
    AND target.DATE = source.DATE
