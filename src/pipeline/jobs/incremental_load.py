@@ -3,14 +3,17 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 
-from ..extract.stooq import fetch_equities, fetch_fx_pair
+from ..extract.alpha import fetch_equities, fetch_fx_pair
 from ..load.local import write_partitioned
 from ..load.snowflake_loader import (
-    get_last_loaded_date,
-    update_last_loaded_date,
+    sf_conn,
     write_df,
 )
 from ..transform.cleaning import clean_equities
+from ..utils.last_loaded_metadata import (
+    get_last_loaded_date,
+    update_last_loaded_date,
+)
 from ..utils.logging import log
 
 
@@ -21,39 +24,39 @@ def run_incremental():
         for s in os.getenv("SYMBOLS", "AAPL,MSFT,GOOGL").split(",")
         if s.strip()
     ]
-    start = os.getenv("START_DATE", "2018-01-01")
+    start = os.getenv("START_DATE", "2025-01-01")
 
-    # -----Equities-----
+    with sf_conn() as conn:
+        # -----Equities-----
+        last_eq_date = get_last_loaded_date(conn, "equities")
+        log(f"Last equities load date: {last_eq_date}")
+        eq_df = clean_equities(fetch_equities(symbols, start, last_loaded=last_eq_date))
+        if len(eq_df) == 0:
+            log("No new equities to load.")
+        else:
+            write_partitioned(eq_df, "equity_daily", ["SYMBOL", "DATE"])
+            write_df(conn, eq_df, table="EQUITY_DAILY", schema="PORTFOLIO.RAW")
+            max_date = eq_df["DATE"].max().strftime("%Y-%m-%d")
+            update_last_loaded_date(conn, "equities", max_date)
+            log(f"Equities loaded through {max_date}")
 
-    last_eq_date = get_last_loaded_date("equities")
-    log(f"Last equities load date: {last_eq_date}")
-    eq_df = clean_equities(fetch_equities(symbols, start, last_loaded=last_eq_date))
-    if len(eq_df) == 0:
-        log("No new equities to load.")
-    else:
-        write_partitioned(eq_df, "equity_daily", ["SYMBOL", "DATE"])
-        write_df(eq_df, table="EQUITY_DAILY", schema="RAW")
-        max_date = eq_df["DATE"].max().strftime("%Y-%m-%d")
-        update_last_loaded_date("equities", max_date)
-        log(f"Equities loaded through {max_date}")
+        # -------FX-------
+        # Let's track only USD/GBP for now
+        last_fx = get_last_loaded_date(conn, "fx")
+        log(f"Last FX load date: {last_fx}")
+        fx_df = fetch_fx_pair("usdgbp", start)
 
-    # -------FX-------
-    # Let's track only USD/GBP for now
-    last_fx = get_last_loaded_date("fx")
-    log(f"Last FX load date: {last_fx}")
-    fx_df = fetch_fx_pair("usdgbp", start)
+        if last_fx:
+            fx_df = fx_df[fx_df["date"] > pd.to_datetime(last_fx).date()]
 
-    if last_fx:
-        fx_df = fx_df[fx_df["date"] > pd.to_datetime(last_fx).date()]
-
-    if len(fx_df) == 0:
-        log("No new FX data to load.")
-    else:
-        write_partitioned(fx_df, "fx_daily", ["pair", "date"])
-        write_df(fx_df, table="FX_DAILY", schema="RAW")
-        max_date_fx = fx_df["date"].max().strftime("%Y-%m-%d")
-        update_last_loaded_date("fx", max_date_fx)
-        log(f"FX loaded through {max_date_fx}")
+        if len(fx_df) == 0:
+            log("No new FX data to load.")
+        else:
+            write_partitioned(fx_df, "fx_daily", ["pair", "date"])
+            write_df(conn, fx_df, table="FX_DAILY", schema="PORTFOLIO.RAW")
+            max_date_fx = fx_df["date"].max().strftime("%Y-%m-%d")
+            update_last_loaded_date(conn, "fx", max_date_fx)
+            log(f"FX loaded through {max_date_fx}")
 
 
 def main():

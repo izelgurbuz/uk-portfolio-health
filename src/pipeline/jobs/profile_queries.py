@@ -1,6 +1,4 @@
-from sqlalchemy import text
-
-from ..load.snowflake_loader import engine
+from ..load.snowflake_loader import sf_conn
 from ..utils.logging import log
 
 
@@ -11,15 +9,15 @@ def profile_snowflake_queries():
     """
 
     queries = {
-        "recent_queries": text("""
+        "recent_queries": """
             SELECT QUERY_ID, TOTAL_ELAPSED_TIME, ROWS_PRODUCED, BYTES_SCANNED
             FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(
                 END_TIME_RANGE_START => DATEADD('hour', -1, CURRENT_TIMESTAMP())
             ))
             ORDER BY START_TIME DESC
             LIMIT 20
-        """),
-        "top_expensive": text("""
+        """,
+        "top_expensive": """
             SELECT
                 QUERY_ID,
                 USER_NAME,
@@ -36,12 +34,22 @@ def profile_snowflake_queries():
             WHERE QUERY_TYPE = 'SELECT'
             ORDER BY BYTES_SCANNED DESC, ELAPSED_SECONDS DESC
             LIMIT 10
-        """),
+        """,
     }
 
-    with engine().connect() as conn:
-        for name, sql in queries.items():
-            log(f"=== Profiling report: {name} ===")
-            rows = conn.execute(sql).fetchall()
-            for r in rows:
-                log(" | ".join(f"{col}={val}" for col, val in r._mapping.items()))
+    with sf_conn() as conn:
+        with conn.cursor() as cur:
+            for name, sql in queries.items():
+                cur.execute(sql)
+
+                # Extract column names
+                columns = [desc[0] for desc in cur.description]
+                rows = cur.fetchall()
+
+                # Log results nicely
+                for row in rows:
+                    row_dict = dict(zip(columns, row))
+                    log(" | ".join(f"{col}={val}" for col, val in row_dict.items()))
+
+                if not rows:
+                    log(f" No results for {name}")

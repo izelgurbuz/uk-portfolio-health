@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 from dotenv import load_dotenv
 
-from ..load.snowflake_loader import exec_sql, write_df
+from ..load.snowflake_loader import sf_conn, write_df
 from ..utils.logging import log
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
@@ -19,19 +19,22 @@ def apply_ddl():
         sql_text = p.read_text()
         # Split on semicolons, strip whitespace, skip empties
         statements = [s.strip() for s in sql_text.split(";") if s.strip()]
-        for stmt in statements:
-            log(f"Applying: {stmt[:80]}...")  # preview first 80 chars
-            exec_sql(stmt)
+        with sf_conn() as conn:
+            cur = conn.cursor()
+            for stmt in statements:
+                log(f"Applying: {stmt[:80]}...")  # preview first 80 chars
+                cur.execute(stmt)
 
 
 def load_raw():
-    eq = pd.read_parquet(DATA_DIR / "equity_daily.parquet")
-    fx = pd.read_parquet(DATA_DIR / "fx_daily.parquet")
-    raw_schema = os.getenv("SNOWFLAKE_SCHEMA_RAW", "RAW")
-    log(f"Loading equities -> {raw_schema}.EQUITY_DAILY ({len(eq)} rows)")
-    write_df(eq, table="EQUITY_DAILY", schema=raw_schema)
-    log(f"Loading FX -> {raw_schema}.FX_DAILY ({len(fx)} rows)")
-    write_df(fx, table="FX_DAILY", schema=raw_schema)
+    with sf_conn() as conn:
+        eq = pd.read_parquet(DATA_DIR / "equity_daily.parquet")
+        fx = pd.read_parquet(DATA_DIR / "fx_daily.parquet")
+        raw_schema = os.getenv("SNOWFLAKE_SCHEMA_RAW", "RAW")
+        log(f"Loading equities -> {raw_schema}.EQUITY_DAILY ({len(eq)} rows)")
+        write_df(conn, eq, table="EQUITY_DAILY", schema=raw_schema)
+        log(f"Loading FX -> {raw_schema}.FX_DAILY ({len(fx)} rows)")
+        write_df(conn, fx, table="FX_DAILY", schema=raw_schema)
 
 
 if __name__ == "__main__":
