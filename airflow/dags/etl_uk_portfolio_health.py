@@ -8,6 +8,7 @@ from airflow import DAG
 from src.pipeline.jobs.data_quality import dq_check
 from src.pipeline.jobs.export_snapshots import export_portfolio_metrics
 from src.pipeline.jobs.incremental_load import main as run_incremental_main
+from src.pipeline.jobs.load_transactions_csv import main as load_transactions_csv
 from src.pipeline.jobs.profile_queries import profile_snowflake_queries
 from src.pipeline.utils.alerts import send_slack_alert
 
@@ -71,6 +72,16 @@ with DAG(
         sql="03_analytics_table.sql",
         snowflake_conn_id="snowflake_default",
     )
+    t_load_transactions_csv = PythonOperator(
+        task_id="load_transactions_csv",
+        python_callable=load_transactions_csv,
+    )
+    t_build_positions_daily = SnowflakeOperator(
+        task_id="build_positions_daily",
+        sql="05_positions_daily.sql",
+        snowflake_conn_id="snowflake_default",
+    )
+
     t_build_portfolio_metrics = SnowflakeOperator(
         task_id="build_portfolio_metrics",
         sql="04_portfolio_metrics.sql",
@@ -93,6 +104,8 @@ with DAG(
         t_incremental_load,
         t_dq_check,
         t_build_fact_prices,
+        t_load_transactions_csv,
+        t_build_positions_daily,
         t_build_portfolio_metrics,
         t_export_snapshot,
         t_profile_queries,
