@@ -19,6 +19,7 @@ ruff = ">=0.5"
 apache-airflow = "==2.9.3"
 apache-airflow-providers-snowflake = "*"
 apache-airflow-providers-http = "*"
+alpha-vantage = "*"
 
 [dev-packages]
 
