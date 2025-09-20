@@ -10,6 +10,7 @@ from src.pipeline.jobs.export_snapshots import export_portfolio_metrics
 from src.pipeline.jobs.incremental_load import main as run_incremental_main
 from src.pipeline.jobs.load_transactions_csv import main as load_transactions_csv
 from src.pipeline.jobs.profile_queries import profile_snowflake_queries
+from src.pipeline.jobs.upload_to_s3 import upload_latest_snapshot
 from src.pipeline.utils.alerts import send_slack_alert
 
 
@@ -96,6 +97,10 @@ with DAG(
         task_id="profile_queries",
         python_callable=profile_snowflake_queries,
     )
+    t_upload_s3 = PythonOperator(
+        task_id="upload_s3_snapshot",
+        python_callable=upload_latest_snapshot,
+    )
 
     chain(
         t_apply_roles,
@@ -108,5 +113,6 @@ with DAG(
         t_build_positions_daily,
         t_build_portfolio_metrics,
         t_export_snapshot,
+        t_upload_s3,
         t_profile_queries,
     )
