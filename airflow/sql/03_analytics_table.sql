@@ -18,11 +18,9 @@ USING (
         e.VOLUME,
         fx.RATE AS USD_TO_GBP,
         e.CLOSE * fx.RATE AS CLOSE_GBP,
-        (e.CLOSE - LAG(e.CLOSE) OVER (
+        ((e.CLOSE  / LAG(e.CLOSE) OVER (
             PARTITION BY e.SYMBOL ORDER BY e.DATE
-        )) / LAG(e.CLOSE) OVER (
-            PARTITION BY e.SYMBOL ORDER BY e.DATE
-        ) AS DAILY_RETURN,
+        )) - 1) AS DAILY_RETURN,
         AVG(e.CLOSE) OVER (
             PARTITION BY e.SYMBOL ORDER BY e.DATE 
             ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
