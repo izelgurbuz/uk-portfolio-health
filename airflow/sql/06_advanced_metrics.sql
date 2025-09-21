@@ -56,15 +56,48 @@ using(
             from base p
             join benchmark_daily b on p.DATE = b.DATE
     ),
-    stats_ba as (
-            select
-                date,
-                portfolio_id,
-                COVAR_SAMP(portfolio_return, benchmark_return) over (partition by portfolio_id order by date ) as covariance_30d,
-                VAR_SAMP(benchmark_return) over (partition by portfolio_id order by date ) AS variance_30d,
-                AVG(portfolio_return) over (partition by portfolio_id order by date ) AS avg_portfolio_return_30d,
-                AVG(benchmark_return) over (partition by portfolio_id order by date ) AS avg_benchmark_return_30d
-            FROM joined
+    -- Rp : daily return portfolio, Rb: daily return benchmark
+
+    --Covariance(Rp, Rb) = ( SUM(Rp * Rb) - ( SUM(Rp) * SUM(Rb) ) / n ) / (n - 1)
+
+    --Variance(Rb) = ( SUM(Rb^2) - ( SUM(Rb) * SUM(Rb) ) / n ) / (n - 1)
+
+    --Beta = Covariance(Rp, Rb) / Variance(Rb)
+
+    --Alpha = Avg(Rp) - Beta * Avg(Rb)
+    -- window : (
+        --     partition by portfolio_id
+        --     order by date
+        --     rows between 29 preceding and current row
+        -- )
+    stats_ba AS (
+        SELECT
+            date,
+            portfolio_id,
+
+            -- Rolling average portfolio return
+            AVG(portfolio_return) OVER window AS avg_portfolio_return_30d,
+
+            -- Rolling average benchmark return
+            AVG(benchmark_return) OVER window AS avg_benchmark_return_30d,
+
+            -- Rolling covariance
+            CASE WHEN COUNT(*) OVER window > 1 THEN
+                (
+                    SUM(portfolio_return * benchmark_return) OVER window
+                    - (SUM(portfolio_return) OVER window * SUM(benchmark_return) OVER window) / COUNT(*) OVER window
+                ) / (COUNT(*) OVER window - 1)
+            END AS covariance_30d,
+
+            -- Rolling variance of benchmark
+            CASE WHEN COUNT(*) OVER window > 1 THEN
+                (
+                    SUM(benchmark_return * benchmark_return) OVER window
+                    - (SUM(benchmark_return) OVER window * SUM(benchmark_return) OVER window) / COUNT(*) OVER window
+                ) / (COUNT(*) OVER window - 1)
+            END AS variance_30d
+
+        FROM joined
     ),
     beta_alpha as (
             select
