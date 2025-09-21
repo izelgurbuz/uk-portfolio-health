@@ -1,11 +1,14 @@
+from typing import Optional
+
 import pandas as pd
 
 
-def clean_equities(df: pd.DataFrame) -> pd.DataFrame:
+def clean_equities(df: pd.DataFrame, benchmark: Optional[bool] = False) -> pd.DataFrame:
     df = df.copy()
     # Basic sanity: drop rows with missing close or date
     df = df.dropna(subset=["symbol", "date", "close"]).copy()
-    df["volume"] = pd.to_numeric(df["volume"], errors="coerce").fillna(0)
+    if not benchmark:
+        df["volume"] = pd.to_numeric(df["volume"], errors="coerce").fillna(0)
     # Deduplicate
     df = df.drop_duplicates(subset=["symbol", "date"]).reset_index(drop=True)
     df.rename(columns=str.upper, inplace=True)

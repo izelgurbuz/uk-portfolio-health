@@ -7,6 +7,7 @@ import requests
 from dotenv import load_dotenv
 
 BASE = "https://www.alphavantage.co/query"
+BENCHMARK_SYMBOL = "SPY"
 
 
 def _alpha_get(params, max_retries=5, backoff=2):
@@ -44,18 +45,27 @@ def fetch_symbol_daily(sym: str, start_date: str) -> pd.DataFrame:
     records = []
     for date_str, values in data["Time Series (Daily)"].items():
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-        records.append(
-            {
-                "symbol": sym.upper(),
-                "date": date_obj,
-                "open": float(values["1. open"]),
-                "high": float(values["2. high"]),
-                "low": float(values["3. low"]),
-                "close": float(values["4. close"]),
-                "volume": int(values["6. volume"]),
-                "source": "alphavantage",
-            }
-        )
+        if sym == BENCHMARK_SYMBOL:
+            records.append(
+                {
+                    "symbol": sym.upper(),
+                    "date": date_obj,
+                    "close": float(values["4. close"]),
+                }
+            )
+        else:
+            records.append(
+                {
+                    "symbol": sym.upper(),
+                    "date": date_obj,
+                    "open": float(values["1. open"]),
+                    "high": float(values["2. high"]),
+                    "low": float(values["3. low"]),
+                    "close": float(values["4. close"]),
+                    "volume": int(values["6. volume"]),
+                    "source": "alphavantage",
+                }
+            )
 
     df = pd.DataFrame(records)
 
@@ -63,7 +73,11 @@ def fetch_symbol_daily(sym: str, start_date: str) -> pd.DataFrame:
     sd = pd.to_datetime(start_date).date()
     df = df[df["date"] >= sd].reset_index(drop=True)
 
-    return df[["symbol", "date", "open", "high", "low", "close", "volume", "source"]]
+    return (
+        df[["symbol", "date", "close"]]
+        if sym == BENCHMARK_SYMBOL
+        else df[["symbol", "date", "open", "high", "low", "close", "volume", "source"]]
+    )
 
 
 def fetch_equities(symbols, start_date, last_loaded=None):

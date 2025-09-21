@@ -88,6 +88,11 @@ with DAG(
         sql="04_portfolio_metrics.sql",
         snowflake_conn_id="snowflake_default",
     )
+    t_build_advanced_metrics = SnowflakeOperator(
+        task_id="build_advanced_metrics",
+        sql="06_advanced_metrics.sql",
+        snowflake_conn_id="snowflake_default",
+    )
 
     t_export_snapshot = PythonOperator(
         task_id="export_snapshot",
@@ -112,6 +117,7 @@ with DAG(
         t_load_transactions_csv,
         t_build_positions_daily,
         t_build_portfolio_metrics,
+        t_build_advanced_metrics,
         t_export_snapshot,
         t_upload_s3,
         t_profile_queries,

@@ -16,6 +16,8 @@ from ..utils.last_loaded_metadata import (
 )
 from ..utils.logging import log
 
+BENCHMARK_SYMBOL = "SPY"
+
 
 def run_incremental():
     load_dotenv()
@@ -57,6 +59,20 @@ def run_incremental():
             max_date_fx = fx_df["date"].max().strftime("%Y-%m-%d")
             update_last_loaded_date(conn, "fx", max_date_fx)
             log(f"FX loaded through {max_date_fx}")
+        # -------S&P500-------
+        last_spy = get_last_loaded_date(conn, "spy")
+        log(f"Last SPY load date: {last_spy}")
+
+        spy_df = clean_equities(
+            fetch_equities([BENCHMARK_SYMBOL], start, last_loaded=last_spy), True
+        )
+        if len(spy_df) == 0:
+            log("No new equities to load.")
+        else:
+            write_df(conn, spy_df, table="FACT_BENCHMARK", schema="PORTFOLIO.RAW")
+            max_date = spy_df["DATE"].max().strftime("%Y-%m-%d")
+            update_last_loaded_date(conn, "spy", max_date)
+            log(f"Equities loaded through {max_date}")
 
 
 def main():
