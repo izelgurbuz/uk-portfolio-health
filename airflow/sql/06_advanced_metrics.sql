@@ -2,7 +2,7 @@ merge into PORTFOLIO.ANALYTICS.FACT_PORTFOLIO_ADV_METRICS t
 using(
     with base as(
         select portfolio_id, date, weighted_daily_return as daily_return, total_value_gbp
-        from VIEW_PORTFOLIO_METRICS
+        from PORTFOLIO.ANALYTICS.VIEW_PORTFOLIO_METRICS
     ),
     stats_portfolio as (
         select
@@ -70,34 +70,96 @@ using(
         --     order by date
         --     rows between 29 preceding and current row
         -- )
-    stats_ba AS (
-        SELECT
+    stats_ba as (
+        select
             date,
             portfolio_id,
 
-            -- Rolling average portfolio return
-            AVG(portfolio_return) OVER window AS avg_portfolio_return_30d,
-
-            -- Rolling average benchmark return
-            AVG(benchmark_return) OVER window AS avg_benchmark_return_30d,
-
-            -- Rolling covariance
-            CASE WHEN COUNT(*) OVER window > 1 THEN
+            -- rolling covariance
+            case when count(*) over (
+                partition by portfolio_id 
+                order by date 
+                rows between 29 preceding and current row
+            ) > 1 then
                 (
-                    SUM(portfolio_return * benchmark_return) OVER window
-                    - (SUM(portfolio_return) OVER window * SUM(benchmark_return) OVER window) / COUNT(*) OVER window
-                ) / (COUNT(*) OVER window - 1)
-            END AS covariance_30d,
+                    sum(portfolio_return * benchmark_return) over (
+                        partition by portfolio_id 
+                        order by date 
+                        rows between 29 preceding and current row
+                    )
+                    - (
+                        sum(portfolio_return) over (
+                            partition by portfolio_id 
+                            order by date 
+                            rows between 29 preceding and current row
+                        ) *
+                        sum(benchmark_return) over (
+                            partition by portfolio_id 
+                            order by date 
+                            rows between 29 preceding and current row
+                        )
+                    ) / count(*) over (
+                        partition by portfolio_id 
+                        order by date 
+                        rows between 29 preceding and current row
+                    )
+                ) / (count(*) over (
+                    partition by portfolio_id 
+                    order by date 
+                    rows between 29 preceding and current row
+                ) - 1)
+            end as covariance_30d,
 
-            -- Rolling variance of benchmark
-            CASE WHEN COUNT(*) OVER window > 1 THEN
+            -- rolling variance of benchmark
+            case when count(*) over (
+                partition by portfolio_id 
+                order by date 
+                rows between 29 preceding and current row
+            ) > 1 then
                 (
-                    SUM(benchmark_return * benchmark_return) OVER window
-                    - (SUM(benchmark_return) OVER window * SUM(benchmark_return) OVER window) / COUNT(*) OVER window
-                ) / (COUNT(*) OVER window - 1)
-            END AS variance_30d
+                    sum(benchmark_return * benchmark_return) over (
+                        partition by portfolio_id 
+                        order by date 
+                        rows between 29 preceding and current row
+                    )
+                    - (
+                        sum(benchmark_return) over (
+                            partition by portfolio_id 
+                            order by date 
+                            rows between 29 preceding and current row
+                        ) *
+                        sum(benchmark_return) over (
+                            partition by portfolio_id 
+                            order by date 
+                            rows between 29 preceding and current row
+                        )
+                    ) / count(*) over (
+                        partition by portfolio_id 
+                        order by date 
+                        rows between 29 preceding and current row
+                    )
+                ) / (count(*) over (
+                    partition by portfolio_id 
+                    order by date 
+                    rows between 29 preceding and current row
+                ) - 1)
+            end as variance_30d,
 
-        FROM joined
+            -- rolling average portfolio return
+            avg(portfolio_return) over (
+                partition by portfolio_id 
+                order by date 
+                rows between 29 preceding and current row
+            ) as avg_portfolio_return_30d,
+
+            -- rolling average benchmark return
+            avg(benchmark_return) over (
+                partition by portfolio_id 
+                order by date 
+                rows between 29 preceding and current row
+            ) as avg_benchmark_return_30d
+
+        from joined
     ),
     beta_alpha as (
             select
@@ -127,7 +189,7 @@ using(
                 when d.down_vol_return_30d > 0 then s.avg_portfolio_return_30d / d.down_vol_return_30d 
                 else 0 
             end as sortino_ratio,
-            min(dd.drawdown) over (partition by portfolio_id order by date rows between 29 preceding and current row) as max_drawdown,
+            min(dd.drawdown) over (partition by dd.portfolio_id order by dd.date rows between 29 preceding and current row) as max_drawdown,
             ba.beta,
             ba.alpha
         from base b
