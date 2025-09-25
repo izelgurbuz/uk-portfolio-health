@@ -2,7 +2,7 @@
 
 This is my end-to-end **data engineering project** that simulates what a real-world financial analytics pipeline would look like.  
 
-This project ingests financial data every day, transforms it, calculates advanced metrics like **Sharpe Ratio**, **Sortino Ratio**, **Max Drawdown**, and serves it through a **Django REST API** and a lightweight dashboard.
+This project ingests financial data every day, transforms it, calculates advanced metrics like **Sharpe Ratio**, **Sortino Ratio**, **Max Drawdown**, and serves it through a **Django REST API** .
 
 It’s built to be **realistic and production-ready**, the way you’d do it at a fintech or hedge fund.
 
@@ -11,7 +11,7 @@ It’s built to be **realistic and production-ready**, the way you’d do it at 
 ## **Why I Built This**
 
 I wanted a project that:
-1. **Showcases real-world data engineering skills** — not just toy examples.
+1. **Showcases real-world data engineering skills** 
 2. Uses **modern tools** like Snowflake, Airflow, and Python in a way you'd see at work.
 3. Lives in the **finance domain**, because finance data is messy, time-sensitive, and perfect for testing pipelines.
 4. Combines **ETL + ELT**, orchestration, and an API layer, showing the full data lifecycle.
@@ -168,6 +168,9 @@ Once the data is flowing, it’s exposed via Django:
   }
 ]
 ```
+<img width="1596" height="890" alt="Screenshot 2025-09-25 at 18 11 50" src="https://github.com/user-attachments/assets/b88afe54-fbca-4e08-8458-59a430ae3c3d" />
+
+
 
 ⚠️ Heads-up: This project needs a Snowflake account and Alpha Vantage API key.
 If you don't have those, you can still browse the code and Airflow DAGs, but you won't see live data.
@@ -221,12 +224,15 @@ etl_uk_portfolio_health
 10. Run the Django API:
 `python manage.py runserver`
 
-11. Access the API and dashboard:
+11. Access the API :
 `http://127.0.0.1:8000/api/portfolios/P1/metrics`
 
 `http://127.0.0.1:8000/api/portfolios/P1/advanced-metrics`
 
-`http://127.0.0.1:8000/api/dashboard/P1/`
+
+<img width="694" height="666" alt="Screenshot 2025-09-21 at 19 17 25" src="https://github.com/user-attachments/assets/00cf2d06-1701-4981-9df2-a3897cf3e790" />
+
+
 
 
 
